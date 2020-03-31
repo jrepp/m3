@@ -1,13 +1,21 @@
-SELF_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+SELF_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 # Grab necessary submodules, in case the repo was cloned without --recursive
 $(SELF_DIR)/.ci/common.mk:
+	@echo "Updating submodules in $(SELF_DIR)"
 	git submodule update --init --recursive
 
 include $(SELF_DIR)/.ci/common.mk
 
+
 SHELL=/bin/bash -o pipefail
 GOPATH=$(shell eval $$(go env | grep GOPATH) && echo $$GOPATH)
+
+# Dump some variables to simplify build system debugging
+.PHONY: debug-info
+debug-info:
+	@echo "[m3] Building in '$(SELF_DIR)'"
+	@echo "[m3] GOPATH is $(GOPATH)"
 
 auto_gen             := scripts/auto-gen.sh
 process_coverfile    := scripts/process-cover.sh
@@ -190,7 +198,7 @@ tools-linux-amd64:
 	$(LINUX_AMD64_ENV) make tools
 
 .PHONY: all
-all: metalint test-ci-unit test-ci-integration services tools
+all: debug-info metalint test-ci-unit test-ci-integration services tools
 	@echo Made all successfully
 
 .PHONY: install-retool
